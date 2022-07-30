@@ -1,0 +1,54 @@
+name: Release and Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/github-script@v6
+        id: get-tag-name
+        with:
+          script: return context.payload.ref.replace(/refs\/tags\//, '');
+          result-encoding: string
+
+      - name: Checkout Code
+        uses: actions/checkout@v2.4.0
+
+      - name: Use Node 16
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test --ci --coverage --maxWorkers=2
+
+      - name: Build
+        run: npm run build
+
+      - name: Pack
+        run: npm pack
+
+      - name: Release
+        uses: 'marvinpinto/action-automatic-releases@latest'
+        with:
+          repo_token: '${{ secrets.GITHUB_TOKEN }}'
+          title: 'ts-regex ${{steps.get-tag-name.outputs.result}}'
+          prerelease: false
+          files: |
+            *.tgz
+
+      - name: Publish
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
