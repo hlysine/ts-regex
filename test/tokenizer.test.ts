@@ -27,5 +27,17 @@ describe('tokenizer', () => {
       Tokenize<'cljkvth5kl34jnvhtkejrhgvnjkljyt45hkvtv5hj234jkntgnkj24hg5ntjkfghc5j234lgerthrtwb hrt '>
     >();
     checkType<['\\k<', '324f', '>', '(?<', 'name', '>', ' ', ')'], Tokenize<'\\k<324f>(?<name> )'>>();
+
+    checkType<['f', 'o', 'o', '?', 'b', 'a', 'r', '+', 'b', 'a', 'z', '*', '?'], Tokenize<'foo?bar+baz*?'>>();
+    checkType<['f', 'o', 'o', '{', '34', ',', '56', '}'], Tokenize<'foo{34,56}'>>();
+    checkType<['f', 'o', 'o', '{', '3', ',', '54562356', '}'], Tokenize<'foo{3,54562356}'>>();
+    checkType<
+      ['f', 'o', 'o', '\\{', '3', ',', ' ', '5', '4', '5', '6', '2', '3', '5', '6', '}'],
+      Tokenize<'foo{3, 54562356}'>
+    >();
+    checkType<['f', 'o', 'o', '\\{', '}'], Tokenize<'foo{}'>>();
+    checkType<['f', 'o', 'o', '{', '3', '}'], Tokenize<'foo{3}'>>();
+    checkType<['f', 'o', 'o', '{', '33452346', '}'], Tokenize<'foo{33452346}'>>();
+    checkType<['f', 'o', 'o', '\\{', '3', '3', '4', '5', '2', '3', ' ', '4', '6', '}'], Tokenize<'foo{334523 46}'>>();
   });
 });
