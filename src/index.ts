@@ -1,6 +1,7 @@
 export * from './tokenizer';
 export * from './parser';
 export * from './checker';
+export * from './strict';
 
 /**
  * todo: plan

@@ -1,8 +1,8 @@
 import { CompareInt, Comparison, Decimal, GetLast, ReplaceLast } from './helper';
 
-type StrictMode = false extends typeof TSRegex.strict ? false : true;
+type StrictMode = true extends typeof TSRegex.strict ? true : false;
 
-export enum NodeType {
+export declare enum NodeType {
   Literal = 'literal',
 
   Quantifier = 'quantifier',
