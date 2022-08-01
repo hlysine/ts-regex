@@ -1,29 +1,4 @@
-import { StringLength } from './helper';
-
-type Hexadecimal =
-  | '0'
-  | '1'
-  | '2'
-  | '3'
-  | '4'
-  | '5'
-  | '6'
-  | '7'
-  | '8'
-  | '9'
-  | 'a'
-  | 'b'
-  | 'c'
-  | 'd'
-  | 'e'
-  | 'f'
-  | 'A'
-  | 'B'
-  | 'C'
-  | 'D'
-  | 'E'
-  | 'F';
-type Decimal = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+import { Decimal, Hexadecimal, StringLength } from './helper';
 
 /**
  * Handles both `\uffff` and `\xff` sequences. Expects Sequence to be `\u` or `\x` when first called.
@@ -70,16 +45,6 @@ type TokenizeNamedGroup<Expr extends string, Tokens extends string[]> = Expr ext
   : Tokenize<Expr>;
 
 /**
- * Patches the given token list to escape the last token if it is a `{`.
- * This is used when the rest of the expression doesn't fit the `{n,m}` or `{n}` quantifier syntax.
- */
-type EscapeBracket<Tokens extends string[]> = Tokens extends [...infer Head, infer Tail]
-  ? Tail extends '{'
-    ? [...Head, '\\{']
-    : Tokens
-  : Tokens;
-
-/**
  * Handle `123,` or `123}` sequences for the {n,m} and {n} quantifiers.
  */
 type TokenizeBracketQuantifierStart<
@@ -91,14 +56,14 @@ type TokenizeBracketQuantifierStart<
     ? TokenizeBracketQuantifierStart<Rest, `${Sequence}${Char}`, Tokens>
     : Char extends '}'
     ? Sequence extends ''
-      ? Tokenize<Rest, [...EscapeBracket<Tokens>, Char]>
+      ? Tokenize<Rest, [...Tokens, Char]>
       : Tokenize<Rest, [...Tokens, Sequence, Char]>
     : Char extends ','
     ? TokenizeBracketQuantifierEnd<Rest, Sequence, '', Tokens>
-    : Tokenize<`${Sequence}${Expr}`, EscapeBracket<Tokens>>
+    : Tokenize<`${Sequence}${Expr}`, Tokens>
   : Sequence extends ''
-  ? EscapeBracket<Tokens>
-  : Tokenize<Sequence, EscapeBracket<Tokens>>;
+  ? Tokens
+  : Tokenize<Sequence, Tokens>;
 
 /**
  * Handle `123}` sequences for the {n,m} and {n} quantifiers.
@@ -116,8 +81,8 @@ type TokenizeBracketQuantifierEnd<
     ? TokenizeBracketQuantifierEnd<Rest, PendingSequence, `${Sequence}${Char}`, Tokens>
     : Char extends '}'
     ? Tokenize<Rest, [...Tokens, PendingSequence, ',', Sequence, Char]>
-    : Tokenize<`${PendingSequence},${Sequence}${Expr}`, EscapeBracket<Tokens>>
-  : Tokenize<`${PendingSequence},${Sequence}`, EscapeBracket<Tokens>>;
+    : Tokenize<`${PendingSequence},${Sequence}${Expr}`, Tokens>
+  : Tokenize<`${PendingSequence},${Sequence}`, Tokens>;
 
 /**
  * Handles all escape sequences that starts with `\`
