@@ -13,6 +13,9 @@ describe('tokenizer', () => {
     checkType<['a', 'b', '\\xff', 'f', 'f'], Tokenize<'ab\\xffff'>>();
 
     checkType<['a', 'b', '\\u12f2', 'g', '4'], Tokenize<'ab\\u12f2g4'>>();
+    checkType<['a', 'b', '\\u12', 'g', '2', 'g', '4'], Tokenize<'ab\\u12g2g4'>>();
+    checkType<['a', 'b', '\\u12'], Tokenize<'ab\\u12'>>();
+    checkType<['a', 'b', '\\u', '\\u'], Tokenize<'ab\\u\\u'>>();
 
     checkType<['a', 'b', '1', '2', '\\345', '6', '7'], Tokenize<'ab12\\34567'>>();
     checkType<['a', 'b', '1', '2', '\\385'], Tokenize<'ab12\\385'>>();

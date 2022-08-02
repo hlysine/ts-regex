@@ -1,6 +1,8 @@
-import { CompareInt, Comparison, Decimal, GetLast, ReplaceLast } from './helper';
+import { CompareInt, Comparison, Decimal, GetLast, Hexadecimal, ReplaceLast, StringToArray } from './helper';
 
 type StrictMode = true extends typeof TSRegex.strict ? true : false;
+
+type IfStrict<Strict, NotStrict> = StrictMode extends true ? Strict : NotStrict;
 
 export declare enum NodeType {
   Literal = 'literal',
@@ -61,6 +63,18 @@ export interface RangeOutOfOrderError<Min extends string, Max extends string> ex
 export interface InvalidRangeSyntaxError<Expr extends string> extends Node {
   type: NodeType.Error;
   value: `strict: '${Expr}' is not a valid range syntax and is being parsed literally. Escape the '{' character to silence this warning.`;
+  children: [];
+}
+
+export interface InvalidUnicodeCharError<Expr extends string> extends Node {
+  type: NodeType.Error;
+  value: `strict: '${Expr}' is not a valid unicode escape sequence and is being parsed literally. Do not escape the 'u' character when not in a unicode escape sequence.`;
+  children: [];
+}
+
+export interface InvalidHexCharError<Expr extends string> extends Node {
+  type: NodeType.Error;
+  value: `strict: '${Expr}' is not a valid hexadecimal escape sequence and is being parsed literally. Do not escape the 'x' character when not in a hexadecimal escape sequence.`;
   children: [];
 }
 
@@ -159,6 +173,18 @@ type LikeRangeQuantifier<Tokens extends string[]> = Tokens extends [infer First,
     : false
   : false;
 
+type CheckHex<
+  Expr extends string,
+  Length extends number,
+  Arr extends string[] = StringToArray<Expr>
+> = Arr extends Hexadecimal[] ? (Arr['length'] extends Length ? true : false) : false;
+
+type CheckDecimal<
+  Expr extends string,
+  Length extends number,
+  Arr extends string[] = StringToArray<Expr>
+> = Arr extends Decimal[] ? (Arr['length'] extends Length ? true : false) : false;
+
 /**
  * If the next token is '?', parse it as a lazy quantifier, otherwise, resume normal parsing.
  */
@@ -171,9 +197,9 @@ export type Parse<
   Tree extends Node[] = [],
   // cached for performance
   SuspiciousRangeQuantifier extends string | false = LikeRangeQuantifier<Tokens>
-> = Tokens extends [infer Head extends SingleCharQuantifier, ...infer Tail extends string[]]
+> = Tokens extends [infer Head extends SingleCharQuantifier, ...infer Tail extends string[]] // parse single character quantifiers
   ? ParseLazy<Tail, QuantifyNode<Tree, Head>>
-  : Tokens extends ['{', infer Min extends string, ',', infer Max extends string, '}', ...infer Tail extends string[]]
+  : Tokens extends ['{', infer Min extends string, ',', infer Max extends string, '}', ...infer Tail extends string[]] // parse {n,m} quantifiers
   ? `${Min}|${Max}` extends `${number}|${number}`
     ? ParseLazy<Tail, QuantifyNodeWithNumber<Tree, Min, Max>>
     : Parse<
@@ -183,11 +209,11 @@ export type Parse<
           {
             type: NodeType.Literal;
             value: '{';
-            children: [...(StrictMode extends true ? [InvalidRangeSyntaxError<`{${Min},${Max}}`>] : [])];
+            children: IfStrict<[InvalidRangeSyntaxError<`{${Min},${Max}}`>], []>;
           }
         ]
       >
-  : Tokens extends ['{', infer Limit extends string, '}', ...infer Tail extends string[]]
+  : Tokens extends ['{', infer Limit extends string, '}', ...infer Tail extends string[]] // parse {n} quantifiers
   ? Limit extends `${number}`
     ? ParseLazy<Tail, QuantifyNodeWithNumber<Tree, Limit, Limit>>
     : Parse<
@@ -197,11 +223,11 @@ export type Parse<
           {
             type: NodeType.Literal;
             value: '{';
-            children: [...(StrictMode extends true ? [InvalidRangeSyntaxError<`{${Limit}}`>] : [])];
+            children: IfStrict<[InvalidRangeSyntaxError<`{${Limit}}`>], []>;
           }
         ]
       >
-  : SuspiciousRangeQuantifier extends string
+  : SuspiciousRangeQuantifier extends string // parse other { } constructs that are not a valid range quantifier
   ? Parse<
       Tokens extends [string, ...infer Remaining extends string[]] ? Remaining : Tokens,
       [
@@ -209,10 +235,42 @@ export type Parse<
         {
           type: NodeType.Literal;
           value: '{';
-          children: [...(StrictMode extends true ? [InvalidRangeSyntaxError<SuspiciousRangeQuantifier>] : [])];
+          children: IfStrict<[InvalidRangeSyntaxError<SuspiciousRangeQuantifier>], []>;
         }
       ]
     >
+  : Tokens extends [`\\u${infer Unicode}`, ...infer Tail extends string[]] // parse unicode escapes
+  ? CheckHex<Unicode, 4> extends true
+    ? Parse<Tail, [...Tree, { type: NodeType.UnicodeCharEscape; value: `\\u${Unicode}`; children: [] }]>
+    : Parse<
+        Tail,
+        [
+          ...Tree,
+          {
+            type: NodeType.Literal;
+            value: `\\u${Unicode}`;
+            children: IfStrict<[InvalidUnicodeCharError<`\\u${Unicode}`>], []>;
+          }
+        ]
+      >
+  : Tokens extends [`\\x${infer Hex}`, ...infer Tail extends string[]] // parse hex escapes
+  ? CheckHex<Hex, 2> extends true
+    ? Parse<Tail, [...Tree, { type: NodeType.HexCharEscape; value: `\\x${Hex}`; children: [] }]>
+    : Parse<
+        Tail,
+        [
+          ...Tree,
+          {
+            type: NodeType.Literal;
+            value: `\\x${Hex}`;
+            children: IfStrict<[InvalidHexCharError<`\\u${Hex}`>], []>;
+          }
+        ]
+      >
+  : Tokens extends [`\\${infer Octal}`, ...infer Tail extends string[]] // parse octal escapes and indexed back-references, assuming they are all octal escapes for now
+  ? CheckDecimal<Octal, 1 | 2 | 3> extends true // check for decimal, not octal, because back-references uses decimal. todo: verify back-references in post-processing
+    ? Parse<Tail, [...Tree, { type: NodeType.OctalCharEscape; value: `\\${Octal}`; children: [] }]>
+    : Parse<Tail, [...Tree, { type: NodeType.Literal; value: `\\${Octal}`; children: [] }]> // parse normal backslash escapes
   : Tokens extends [infer Head extends string, ...infer Tail extends string[]]
   ? Parse<Tail, [...Tree, { type: NodeType.Literal; value: Head; children: [] }]>
   : Tree;
