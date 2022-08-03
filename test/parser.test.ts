@@ -215,7 +215,7 @@ describe('parser', () => {
           children: [
             {
               type: NodeType.Error;
-              value: "strict: '\\u1' is not a valid hexadecimal escape sequence and is being parsed literally. Do not escape the 'x' character when not in a hexadecimal escape sequence.";
+              value: "strict: '\\x1' is not a valid hexadecimal escape sequence and is being parsed literally. Do not escape the 'x' character when not in a hexadecimal escape sequence.";
               children: [];
             }
           ];
@@ -236,5 +236,176 @@ describe('parser', () => {
       Parse<Tokenize<'\\1u'>>
     >();
     checkType<[{ type: NodeType.Literal; value: '\\^'; children: [] }], Parse<Tokenize<'\\^'>>>();
+    checkType<
+      [
+        { type: NodeType.Literal; value: 'a'; children: [] },
+        {
+          type: NodeType.CharClass;
+          value: '[';
+          children: [
+            { type: NodeType.Literal; value: 'b'; children: [] },
+            { type: NodeType.Literal; value: 'c'; children: [] }
+          ];
+        }
+      ],
+      Parse<Tokenize<'a[bc]'>>
+    >();
+    checkType<
+      [
+        { type: NodeType.Literal; value: 'a'; children: [] },
+        {
+          type: NodeType.CharClass;
+          value: '[';
+          children: [
+            { type: NodeType.Literal; value: 'b'; children: [] },
+            { type: NodeType.Error; value: 'Character class missing closing bracket.'; children: [] }
+          ];
+        }
+      ],
+      Parse<Tokenize<'a[b'>>
+    >();
+    checkType<
+      [
+        {
+          type: NodeType.CharClass;
+          value: '[';
+          children: [
+            { type: NodeType.HexCharEscape; value: '\\x4f'; children: [] },
+            { type: NodeType.Literal; value: 'f'; children: [] }
+          ];
+        }
+      ],
+      Parse<Tokenize<'[\\x4ff]'>>
+    >();
+    checkType<
+      [
+        {
+          type: NodeType.CharClass;
+          value: '[';
+          children: [
+            { type: NodeType.UnicodeCharEscape; value: '\\u4ff2'; children: [] },
+            { type: NodeType.Literal; value: 'f'; children: [] }
+          ];
+        }
+      ],
+      Parse<Tokenize<'[\\u4ff2f]'>>
+    >();
+    checkType<
+      [
+        {
+          type: NodeType.CharClass;
+          value: '[';
+          children: [
+            { type: NodeType.OctalCharEscape; value: '\\1'; children: [] },
+            { type: NodeType.Literal; value: '9'; children: [] },
+            { type: NodeType.Literal; value: '2'; children: [] }
+          ];
+        }
+      ],
+      Parse<Tokenize<'[\\192]'>>
+    >();
+    checkType<
+      [
+        {
+          type: NodeType.CharClass;
+          value: '[';
+          children: [
+            {
+              type: NodeType.CharRange;
+              value: '-';
+              children: [
+                { type: NodeType.Literal; value: 'a'; children: [] },
+                { type: NodeType.Literal; value: 'z'; children: [] }
+              ];
+            }
+          ];
+        }
+      ],
+      Parse<Tokenize<'[a-z]'>>
+    >();
+    checkType<
+      [
+        {
+          type: NodeType.CharClass;
+          value: '[';
+          children: [
+            {
+              type: NodeType.CharRange;
+              value: '-';
+              children: [
+                { type: NodeType.HexCharEscape; value: '\\x00'; children: [] },
+                { type: NodeType.HexCharEscape; value: '\\xff'; children: [] }
+              ];
+            }
+          ];
+        }
+      ],
+      Parse<Tokenize<'[\\x00-\\xff]'>>
+    >();
+    checkType<
+      [
+        {
+          type: NodeType.CharClass;
+          value: '[';
+          children: [
+            {
+              type: NodeType.CharRange;
+              value: '-';
+              children: [
+                { type: NodeType.OctalCharEscape; value: '\\0'; children: [] },
+                { type: NodeType.OctalCharEscape; value: '\\123'; children: [] }
+              ];
+            },
+            { type: NodeType.Literal; value: '('; children: [] },
+            { type: NodeType.Literal; value: '?'; children: [] },
+            { type: NodeType.Literal; value: ':'; children: [] },
+            { type: NodeType.Literal; value: ')'; children: [] }
+          ];
+        }
+      ],
+      Parse<Tokenize<'[\\0-\\123(?:)]'>>
+    >();
+    checkType<
+      [
+        {
+          type: NodeType.CharClass;
+          value: '[';
+          children: [
+            {
+              type: NodeType.CharRange;
+              value: '-';
+              children: [
+                { type: NodeType.Literal; value: '-'; children: [] },
+                { type: NodeType.Literal; value: 'a'; children: [] }
+              ];
+            }
+          ];
+        }
+      ],
+      Parse<Tokenize<'[--a]'>>
+    >();
+    checkType<
+      [
+        {
+          type: NodeType.CharClass;
+          value: '[';
+          children: [
+            { type: NodeType.Literal; value: '-'; children: [] },
+            { type: NodeType.Literal; value: 'z'; children: [] },
+            {
+              type: NodeType.CharRange;
+              value: '-';
+              children: [
+                { type: NodeType.Literal; value: 'A'; children: [] },
+                { type: NodeType.Literal; value: 'Z'; children: [] }
+              ];
+            },
+            { type: NodeType.Literal; value: '0'; children: [] },
+            { type: NodeType.Literal; value: '-'; children: [] }
+          ];
+        }
+      ],
+      Parse<Tokenize<'[-zA-Z0-]'>>
+    >();
   });
 });

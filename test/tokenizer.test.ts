@@ -25,6 +25,10 @@ describe('tokenizer', () => {
     checkType<['[^', 'c', '[', '^', ']'], Tokenize<'[^c[^]'>>();
     checkType<['a', 'b', '[', 'c', '^', ']'], Tokenize<'ab[c^]'>>();
     checkType<['a', 'b', '[^', 'c', ']'], Tokenize<'ab[^c]'>>();
+    checkType<['[', '\\123', ']'], Tokenize<'[\\123]'>>();
+    checkType<['[', '(', '?', ':', ')', ']'], Tokenize<'[(?:)]'>>();
+    checkType<['[', '\\1', '(', '?', ':', ')', ']'], Tokenize<'[\\1(?:)]'>>();
+    checkType<['[', '\\1', '9', '3', ']'], Tokenize<'[\\193]'>>();
     checkType<
       string[],
       Tokenize<'cljkvth5kl34jnvhtkejrhgvnjkljyt45hkvtv5hj234jkntgnkj24hg5ntjkfghc5j234lgerthrtwb hrt '>
@@ -42,5 +46,13 @@ describe('tokenizer', () => {
     checkType<['f', 'o', 'o', '{', '3', '}'], Tokenize<'foo{3}'>>();
     checkType<['f', 'o', 'o', '{', '33452346', '}'], Tokenize<'foo{33452346}'>>();
     checkType<['f', 'o', 'o', '{', '3', '3', '4', '5', '2', '3', ' ', '4', '6', '}'], Tokenize<'foo{334523 46}'>>();
+
+    checkType<['(?:', 't', 'e', 's', 't', ')'], Tokenize<'(?:test)'>>();
+    checkType<['(?<=', 't', 'e', 's', 't', ')'], Tokenize<'(?<=test)'>>();
+    checkType<
+      ['(?:', '(?<=', '[', '(', '?', ':', ')', ']', ')', ')', '{', '3', ',', '4', '}', '?'],
+      Tokenize<'(?:(?<=[(?:)])){3,4}?'>
+    >();
+    checkType<['(', '?', 't', 'e', 's', 't', ')'], Tokenize<'(?test)'>>();
   });
 });

@@ -22,6 +22,7 @@ export type Hexadecimal =
   | 'E'
   | 'F';
 export type Decimal = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+export type Octal = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7';
 
 export type StringToArray<T extends string, Arr extends any[] = []> = T extends `${infer Char}${infer Rest}`
   ? StringToArray<Rest, [...Arr, Char]>
@@ -45,6 +46,8 @@ export enum Comparison {
   Equal,
   Greater,
 }
+
+export type EditObject<Target extends object, Edit extends object> = Omit<Target, keyof Edit> & Edit;
 
 /**
  * Adapted from https://github.com/type-challenges/type-challenges/issues/11444
