@@ -33,7 +33,11 @@ describe('tokenizer', () => {
       string[],
       Tokenize<'cljkvth5kl34jnvhtkejrhgvnjkljyt45hkvtv5hj234jkntgnkj24hg5ntjkfghc5j234lgerthrtwb hrt '>
     >();
+
     checkType<['\\k<', '324f', '>', '(?<', 'name', '>', ' ', ')'], Tokenize<'\\k<324f>(?<name> )'>>();
+    checkType<['\\k<', '324f', '>', '(?<', 'na()me', '>', ' ', ')'], Tokenize<'\\k<324f>(?<na()me> )'>>();
+    checkType<['\\k<', '324f', '>', '(?<', 'n', 'a', 'm', 'e', ' ', ')'], Tokenize<'\\k<324f>(?<name )'>>();
+    checkType<['\\k<', '324f', '>', '(?<', '', '>', ' ', ')'], Tokenize<'\\k<324f>(?<> )'>>();
 
     checkType<['f', 'o', 'o', '?', 'b', 'a', 'r', '+', 'b', 'a', 'z', '*', '?'], Tokenize<'foo?bar+baz*?'>>();
     checkType<['f', 'o', 'o', '{', '34', ',', '56', '}'], Tokenize<'foo{34,56}'>>();

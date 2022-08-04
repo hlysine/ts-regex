@@ -59,7 +59,7 @@ type TokenizeNamedGroup<Expr extends string, Tokens extends string[]> = Expr ext
   ? Tokenize<Rest, [...Tokens, Name, '>']>
   : Expr extends `>${infer Rest}`
   ? Tokenize<Rest, [...Tokens, '>']>
-  : Tokenize<Expr>;
+  : Tokenize<Expr, Tokens>;
 
 /**
  * Handle `123,` or `123}` sequences for the {n,m} and {n} quantifiers.
