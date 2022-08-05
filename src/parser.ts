@@ -1,19 +1,17 @@
 import {
   Alphabet,
+  CheckDecimal,
+  CheckHex,
+  CheckOctal,
   CompareInt,
   Comparison,
   Decimal,
   EditObject,
   GetLast,
-  Hexadecimal,
-  Octal,
+  IfStrict,
   ReplaceLast,
   StringToArray,
 } from './helper';
-
-type StrictMode = true extends typeof TSRegex.strict ? true : false;
-
-type IfStrict<Strict, NotStrict> = StrictMode extends true ? Strict : NotStrict;
 
 export declare enum NodeType {
   Literal = 'literal',
@@ -279,24 +277,6 @@ type LikeRangeQuantifier<Tokens extends string[]> = Tokens extends [infer First,
     : false
   : false;
 
-type CheckHex<
-  Expr extends string,
-  Length extends number,
-  Arr extends string[] = StringToArray<Expr>
-> = Arr extends Hexadecimal[] ? (Arr['length'] extends Length ? true : false) : false;
-
-type CheckDecimal<
-  Expr extends string,
-  Length extends number,
-  Arr extends string[] = StringToArray<Expr>
-> = Arr extends Decimal[] ? (Arr['length'] extends Length ? true : false) : false;
-
-type CheckOctal<
-  Expr extends string,
-  Length extends number,
-  Arr extends string[] = StringToArray<Expr>
-> = Arr extends Octal[] ? (Arr['length'] extends Length ? true : false) : false;
-
 type CheckGroupName<Expr extends string> = Expr extends `${infer Char}${infer Rest}`
   ? Char extends Alphabet
     ? StringToArray<Rest> extends (Alphabet | Decimal)[]
@@ -500,6 +480,31 @@ type ParseNormal<
       ],
       InGroup
     >
+  : Tokens extends ['\\k<', ...infer Tail extends string[]]
+  ? Tail extends [infer Name extends string, '>', ...infer Rest extends string[]]
+    ? CheckGroupName<Name> extends true
+      ? ParseNormal<Rest, [...Tree, { type: NodeType.BackReference; value: Name; children: [] }], InGroup>
+      : ParseNormal<
+          Rest,
+          [
+            ...Tree,
+            {
+              type: NodeType.Literal;
+              value: Name;
+              children: [InvalidGroupNameError<Name>];
+            }
+          ],
+          InGroup
+        >
+    : ParseNormal<
+        Tail,
+        [
+          ...Tree,
+          { type: NodeType.Literal; value: '\\k'; children: [] },
+          { type: NodeType.Literal; value: '<'; children: [] }
+        ],
+        InGroup
+      >
   : Tokens extends [`\\u${infer Unicode}`, ...infer Tail extends string[]] // parse unicode escapes
   ? CheckHex<Unicode, 4> extends true
     ? ParseNormal<Tail, [...Tree, { type: NodeType.UnicodeCharEscape; value: `\\u${Unicode}`; children: [] }], InGroup>

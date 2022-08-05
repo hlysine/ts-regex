@@ -667,4 +667,35 @@ describe('parser', () => {
       Parse<Tokenize<'(|('>>
     >();
   });
+
+  it('parses back-references', () => {
+    checkType<[{ type: NodeType.BackReference; value: 'name'; children: [] }], Parse<Tokenize<'\\k<name>'>>>();
+    checkType<
+      [
+        {
+          type: NodeType.Literal;
+          value: 'na3-me';
+          children: [
+            {
+              type: NodeType.Error;
+              value: "'na3-me' is an invalid name for capture group. It must be alphanumeric and must not start with a digit.";
+              children: [];
+            }
+          ];
+        }
+      ],
+      Parse<Tokenize<'\\k<na3-me>'>>
+    >();
+    checkType<
+      [
+        { type: NodeType.Literal; value: '\\k'; children: [] },
+        { type: NodeType.Literal; value: '<'; children: [] },
+        { type: NodeType.Literal; value: 'n'; children: [] },
+        { type: NodeType.Literal; value: 'a'; children: [] },
+        { type: NodeType.Literal; value: 'm'; children: [] },
+        { type: NodeType.Literal; value: 'e'; children: [] }
+      ],
+      Parse<Tokenize<'\\k<name'>>
+    >();
+  });
 });

@@ -39,6 +39,7 @@ describe('tokenizer', () => {
     checkType<['[', '(', '?', ':', ')', ']'], Tokenize<'[(?:)]'>>();
     checkType<['[', '\\1', '(', '?', ':', ')', ']'], Tokenize<'[\\1(?:)]'>>();
     checkType<['[', '\\1', '9', '3', ']'], Tokenize<'[\\193]'>>();
+    checkType<['[', '\\k', '<', 'n', 'a', 'm', 'e', '>', ']'], Tokenize<'[\\k<name>]'>>();
   });
 
   it('tokenizes named capture groups', () => {

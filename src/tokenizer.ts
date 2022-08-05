@@ -113,7 +113,9 @@ type TokenizeEscapeSequence<
   : Expr extends `\\u${infer Rest}` // 2 byte hexadecimal escape sequence
   ? TokenizeHexSequence<State, Rest, 6, `\\u`, Tokens>
   : Expr extends `\\k<${infer Rest}` // named back-reference
-  ? TokenizeNamedGroup<Rest, [...Tokens, '\\k<']>
+  ? State extends TokenizerState.CharGroup
+    ? TokenizeByState<State, Rest, [...Tokens, '\\k', '<']>
+    : TokenizeNamedGroup<Rest, [...Tokens, '\\k<']>
   : Expr extends `\\${infer Char}${infer Rest}`
   ? State extends TokenizerState.Normal
     ? Char extends Decimal // octal escape sequence or indexed group back-reference

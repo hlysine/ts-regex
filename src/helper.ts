@@ -1,3 +1,7 @@
+export type StrictMode = true extends typeof TSRegex.strict ? true : false;
+
+export type IfStrict<Strict, NotStrict> = StrictMode extends true ? Strict : NotStrict;
+
 export type Hexadecimal =
   | '0'
   | '1'
@@ -94,6 +98,24 @@ export type StringLength<T extends string> = StringToArray<T>['length'];
 export type GetLast<E, T extends E[]> = T extends [...E[], infer Tail extends E] ? Tail : unknown;
 
 export type ReplaceLast<E, T extends E[], U extends E> = T extends [...infer Head, E] ? [...Head, U] : [U];
+
+export type CheckHex<
+  Expr extends string,
+  Length extends number,
+  Arr extends string[] = StringToArray<Expr>
+> = Arr extends Hexadecimal[] ? (Arr['length'] extends Length ? true : false) : false;
+
+export type CheckDecimal<
+  Expr extends string,
+  Length extends number,
+  Arr extends string[] = StringToArray<Expr>
+> = Arr extends Decimal[] ? (Arr['length'] extends Length ? true : false) : false;
+
+export type CheckOctal<
+  Expr extends string,
+  Length extends number,
+  Arr extends string[] = StringToArray<Expr>
+> = Arr extends Octal[] ? (Arr['length'] extends Length ? true : false) : false;
 
 export enum Comparison {
   Lower,
