@@ -2,9 +2,17 @@ import { Tokenize } from '../src/index';
 import { checkType } from './testUtils';
 
 describe('tokenizer', () => {
-  it('tokenizes correctly', () => {
+  it('tokenizes literals', () => {
     checkType<['a', 'b', 'c'], Tokenize<'abc'>>();
+    checkType<['a'], Tokenize<'a'>>();
+    checkType<[], Tokenize<''>>();
+    checkType<
+      string[],
+      Tokenize<'cljkvth5kl34jnvhtkejrhgvnjkljyt45hkvtv5hj234jkntgnkj24hg5ntjkfghc5j234lgerthrtwb hrt '>
+    >();
+  });
 
+  it('tokenizes escape sequences', () => {
     checkType<['\\\\', '\\.'], Tokenize<'\\\\\\.'>>();
     checkType<['a', 'b', '\\\\', '\\0'], Tokenize<'ab\\\\\\0'>>();
     checkType<['a', 'b', '\\x'], Tokenize<'ab\\x'>>();
@@ -20,7 +28,9 @@ describe('tokenizer', () => {
     checkType<['a', 'b', '1', '2', '\\345', '6', '7'], Tokenize<'ab12\\34567'>>();
     checkType<['a', 'b', '1', '2', '\\385'], Tokenize<'ab12\\385'>>();
     checkType<['a', 'b', '1', '2', '\\385'], Tokenize<'ab12\\385'>>();
+  });
 
+  it('tokenizes character groups', () => {
     checkType<['[', 'c', '[', '^', ']'], Tokenize<'[c[^]'>>();
     checkType<['[^', 'c', '[', '^', ']'], Tokenize<'[^c[^]'>>();
     checkType<['a', 'b', '[', 'c', '^', ']'], Tokenize<'ab[c^]'>>();
@@ -29,16 +39,16 @@ describe('tokenizer', () => {
     checkType<['[', '(', '?', ':', ')', ']'], Tokenize<'[(?:)]'>>();
     checkType<['[', '\\1', '(', '?', ':', ')', ']'], Tokenize<'[\\1(?:)]'>>();
     checkType<['[', '\\1', '9', '3', ']'], Tokenize<'[\\193]'>>();
-    checkType<
-      string[],
-      Tokenize<'cljkvth5kl34jnvhtkejrhgvnjkljyt45hkvtv5hj234jkntgnkj24hg5ntjkfghc5j234lgerthrtwb hrt '>
-    >();
+  });
 
+  it('tokenizes named capture groups', () => {
     checkType<['\\k<', '324f', '>', '(?<', 'name', '>', ' ', ')'], Tokenize<'\\k<324f>(?<name> )'>>();
     checkType<['\\k<', '324f', '>', '(?<', 'na()me', '>', ' ', ')'], Tokenize<'\\k<324f>(?<na()me> )'>>();
     checkType<['\\k<', '324f', '>', '(?<', 'n', 'a', 'm', 'e', ' ', ')'], Tokenize<'\\k<324f>(?<name )'>>();
     checkType<['\\k<', '324f', '>', '(?<', '', '>', ' ', ')'], Tokenize<'\\k<324f>(?<> )'>>();
+  });
 
+  it('tokenizes quantifiers', () => {
     checkType<['f', 'o', 'o', '?', 'b', 'a', 'r', '+', 'b', 'a', 'z', '*', '?'], Tokenize<'foo?bar+baz*?'>>();
     checkType<['f', 'o', 'o', '{', '34', ',', '56', '}'], Tokenize<'foo{34,56}'>>();
     checkType<['f', 'o', 'o', '{', '3', ',', '54562356', '}'], Tokenize<'foo{3,54562356}'>>();
@@ -50,7 +60,9 @@ describe('tokenizer', () => {
     checkType<['f', 'o', 'o', '{', '3', '}'], Tokenize<'foo{3}'>>();
     checkType<['f', 'o', 'o', '{', '33452346', '}'], Tokenize<'foo{33452346}'>>();
     checkType<['f', 'o', 'o', '{', '3', '3', '4', '5', '2', '3', ' ', '4', '6', '}'], Tokenize<'foo{334523 46}'>>();
+  });
 
+  it('tokenizes groups', () => {
     checkType<['(?:', 't', 'e', 's', 't', ')'], Tokenize<'(?:test)'>>();
     checkType<['(?<=', 't', 'e', 's', 't', ')'], Tokenize<'(?<=test)'>>();
     checkType<

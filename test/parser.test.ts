@@ -3,7 +3,7 @@ import { NodeType, Parse, Tokenize } from '../src/index';
 import { checkType } from './testUtils';
 
 describe('parser', () => {
-  it('parses correctly', () => {
+  it('parses literals', () => {
     checkType<
       [
         { type: NodeType.Literal; value: 'a'; children: [] },
@@ -12,6 +12,11 @@ describe('parser', () => {
       ],
       Parse<Tokenize<'abc'>>
     >();
+    checkType<[{ type: NodeType.Literal; value: 'a'; children: [] }], Parse<Tokenize<'a'>>>();
+    checkType<[], Parse<Tokenize<''>>>();
+  });
+
+  it('parses quantifiers', () => {
     checkType<
       [
         { type: NodeType.Quantifier; value: '+'; children: [{ type: NodeType.Literal; value: 'a'; children: [] }] },
@@ -163,6 +168,9 @@ describe('parser', () => {
       ],
       Parse<Tokenize<'.{o}'>>
     >();
+  });
+
+  it('parses escape sequences', () => {
     checkType<
       [
         { type: NodeType.Literal; value: 'a'; children: [] },
@@ -235,6 +243,9 @@ describe('parser', () => {
       ],
       Parse<Tokenize<'\\1u'>>
     >();
+  });
+
+  it('parses character classes', () => {
     checkType<[{ type: NodeType.Literal; value: '\\^'; children: [] }], Parse<Tokenize<'\\^'>>>();
     checkType<
       [
@@ -407,6 +418,9 @@ describe('parser', () => {
       ],
       Parse<Tokenize<'[-zA-Z0-]'>>
     >();
+  });
+
+  it('parses groups', () => {
     checkType<
       [
         { type: NodeType.Literal; value: 'a'; children: [] },
@@ -536,6 +550,9 @@ describe('parser', () => {
       ],
       Parse<Tokenize<'ab(?<c)'>>
     >();
+  });
+
+  it('parses alternation', () => {
     checkType<
       [
         {
