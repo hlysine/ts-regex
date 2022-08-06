@@ -8,7 +8,6 @@ import {
   Decimal,
   EditObject,
   GetLast,
-  IfStrict,
   ReplaceLast,
   StringToArray,
 } from './helper';
@@ -227,7 +226,7 @@ type AlternationNode<
 type CharRangeNode<Tree extends Node[], LastTreeNode = GetLast<Node, Tree>> = LastTreeNode extends Node & {
   type: NodeType.CharRange;
 }
-  ? CharGroupLiteralNode<Tree, { type: NodeType.Literal; value: '-'; children: IfStrict<[ChainedRangeWarning], []> }>
+  ? CharGroupLiteralNode<Tree, { type: NodeType.Literal; value: '-'; children: [ChainedRangeWarning] }>
   : ReplaceLast<
       Node,
       Tree,
@@ -313,7 +312,7 @@ type ParseCharClassResursive<Tokens extends string[], Tree extends Node[]> = Tok
           {
             type: NodeType.Literal;
             value: `\\u${Unicode}`;
-            children: IfStrict<[InvalidUnicodeCharWarning<`\\u${Unicode}`>], []>;
+            children: [InvalidUnicodeCharWarning<`\\u${Unicode}`>];
           }
         >
       >
@@ -330,7 +329,7 @@ type ParseCharClassResursive<Tokens extends string[], Tree extends Node[]> = Tok
           {
             type: NodeType.Literal;
             value: `\\x${Hex}`;
-            children: IfStrict<[InvalidHexCharWarning<`\\x${Hex}`>], []>;
+            children: [InvalidHexCharWarning<`\\x${Hex}`>];
           }
         >
       >
@@ -447,7 +446,7 @@ type ParseNormal<
           {
             type: NodeType.Literal;
             value: '{';
-            children: IfStrict<[InvalidRangeSyntaxWarning<`{${Min},${Max}}`>], []>;
+            children: [InvalidRangeSyntaxWarning<`{${Min},${Max}}`>];
           }
         ],
         InGroup
@@ -462,7 +461,7 @@ type ParseNormal<
           {
             type: NodeType.Literal;
             value: '{';
-            children: IfStrict<[InvalidRangeSyntaxWarning<`{${Limit}}`>], []>;
+            children: [InvalidRangeSyntaxWarning<`{${Limit}}`>];
           }
         ],
         InGroup
@@ -475,7 +474,7 @@ type ParseNormal<
         {
           type: NodeType.Literal;
           value: '{';
-          children: IfStrict<[InvalidRangeSyntaxWarning<SuspiciousRangeQuantifier>], []>;
+          children: [InvalidRangeSyntaxWarning<SuspiciousRangeQuantifier>];
         }
       ],
       InGroup
@@ -515,7 +514,7 @@ type ParseNormal<
           {
             type: NodeType.Literal;
             value: `\\u${Unicode}`;
-            children: IfStrict<[InvalidUnicodeCharWarning<`\\u${Unicode}`>], []>;
+            children: [InvalidUnicodeCharWarning<`\\u${Unicode}`>];
           }
         ],
         InGroup
@@ -530,7 +529,7 @@ type ParseNormal<
           {
             type: NodeType.Literal;
             value: `\\x${Hex}`;
-            children: IfStrict<[InvalidHexCharWarning<`\\x${Hex}`>], []>;
+            children: [InvalidHexCharWarning<`\\x${Hex}`>];
           }
         ],
         InGroup

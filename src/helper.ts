@@ -1,7 +1,3 @@
-export type StrictMode = true extends typeof TSRegex.strict ? true : false;
-
-export type IfStrict<Strict, NotStrict> = StrictMode extends true ? Strict : NotStrict;
-
 export type Hexadecimal =
   | '0'
   | '1'

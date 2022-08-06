@@ -1,4 +1,4 @@
-import { Tokenize } from '../src/index';
+import { Tokenize } from '../src/tokenizer';
 import { checkType } from './testUtils';
 
 describe('tokenizer', () => {

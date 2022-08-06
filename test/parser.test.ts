@@ -1,5 +1,5 @@
-import '../src/strict';
-import { NodeType, Parse, Tokenize } from '../src/index';
+import { NodeType, Parse } from '../src/parser';
+import { Tokenize } from '../src/tokenizer';
 import { checkType } from './testUtils';
 
 describe('parser', () => {

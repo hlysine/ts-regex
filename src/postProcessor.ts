@@ -3,10 +3,10 @@
 // done: check for duplicate named groups
 // done: check for unresolved named references
 // todo: check for indexed back-references for named groups
-// todo: check for duplicate alternation branches
+// done: check for duplicate alternation branches
 // done: check for useless character escapes
 
-import { Alphabet, CheckOctal, CompareInt, Comparison, Decimal, EditObject, IfStrict, Octal } from './helper';
+import { Alphabet, CheckOctal, CompareInt, Comparison, Decimal, EditObject, Octal } from './helper';
 import { Node, NodeType } from './parser';
 
 export interface DuplicateNamedReferenceError<Expr extends string> extends Node {
@@ -39,6 +39,17 @@ export interface UselessCharEscapeWarning<Expr extends string> extends Node {
   children: [];
 }
 
+export interface DuplicateAlternationBranchWarning extends Node {
+  type: NodeType.Warning;
+  value: 'There are multiple alternation branches with identical content.';
+  children: [];
+}
+
+type UsefulEscapes = 'n' | 'r' | 't' | '0' | 's' | 'S' | 'd' | 'D' | 'w' | 'W' | 'v' | 'b' | 'B' | 'f';
+type UselessEscape<Alphanumeric extends string = Alphabet | Decimal> = Alphanumeric extends UsefulEscapes
+  ? never
+  : Alphanumeric;
+
 type ParseLiterally<Expr extends string, Tree extends Node[] = []> = Expr extends `${infer Char}${infer Rest}`
   ? ParseLiterally<Rest, [...Tree, { type: NodeType.Literal; value: Char; children: [] }]>
   : Tree;
@@ -55,7 +66,7 @@ type ParseInvalidOctalChar<
         {
           type: NodeType.OctalCharEscape;
           value: `\\${OctalSequence}`;
-          children: IfStrict<[BanOctalCharWarning<`\\${OctalSequence}`>], []>;
+          children: [BanOctalCharWarning<`\\${OctalSequence}`>];
         },
         ...ParseLiterally<Expr>
       ]
@@ -65,11 +76,11 @@ type ParseInvalidOctalChar<
       {
         type: NodeType.OctalCharEscape;
         value: `\\${OctalSequence}`;
-        children: IfStrict<[BanOctalCharWarning<`\\${OctalSequence}`>], []>;
+        children: [BanOctalCharWarning<`\\${OctalSequence}`>];
       }
     ];
 
-type CollectReferences<Tree extends Node[], References extends (string | null)[] = []> = Tree extends [
+export type CollectReferences<Tree extends Node[], References extends (string | null)[] = []> = Tree extends [
   infer Head extends Node,
   ...infer Tail extends Node[]
 ]
@@ -93,10 +104,7 @@ type ProcessIndexedReferences<
               Tail,
               [
                 ...TreeHead,
-                EditObject<
-                  Head,
-                  { children: [...Head['children'], ...IfStrict<[BanOctalCharWarning<`\\${Index}`>], []>] }
-                >
+                EditObject<Head, { children: [...Head['children'], ...[BanOctalCharWarning<`\\${Index}`>]] }>
               ],
               References
             >
@@ -147,7 +155,7 @@ type ProcessCharEscapes<TreeTail extends Node[], TreeHead extends Node[]> = Tree
 ]
   ? Head extends Node & { type: NodeType.Literal }
     ? Head['value'] extends `\\${infer Char}`
-      ? Char extends Alphabet | Decimal
+      ? Char extends UselessEscape
         ? ProcessCharEscapes<
             Tail,
             [
@@ -171,13 +179,39 @@ type CheckDuplicateNames<Tree extends Node[], References extends (string | null)
     : CheckDuplicateNames<Tree, Tail>
   : Tree;
 
-export type ProcessReferences<
+type ProcessAlternation<TreeTail extends Node[], TreeHead extends Node[]> = TreeTail extends [
+  infer Head extends Node,
+  ...infer Tail extends Node[]
+]
+  ? Head extends Node & { type: NodeType.Alternation }
+    ? Head extends Tail[number]
+      ? ProcessAlternation<
+          Tail,
+          [
+            ...TreeHead,
+            EditObject<
+              Head,
+              { children: [...ProcessAlternation<Head['children'], []>, DuplicateAlternationBranchWarning] }
+            >
+          ]
+        >
+      : ProcessAlternation<
+          Tail,
+          [...TreeHead, EditObject<Head, { children: ProcessAlternation<Head['children'], []> }>]
+        >
+    : ProcessAlternation<Tail, [...TreeHead, EditObject<Head, { children: ProcessAlternation<Head['children'], []> }>]>
+  : TreeHead;
+
+export type PostProcess<
   Tree extends Node[],
   References extends (string | null)[] = CollectReferences<Tree>
-> = ProcessCharEscapes<
-  CheckDuplicateNames<
-    ProcessIndexedReferences<ProcessNamedReferences<Tree, [], References>, [], References>,
-    References
+> = ProcessAlternation<
+  ProcessCharEscapes<
+    CheckDuplicateNames<
+      ProcessIndexedReferences<ProcessNamedReferences<Tree, [], References>, [], References>,
+      References
+    >,
+    []
   >,
   []
 >;

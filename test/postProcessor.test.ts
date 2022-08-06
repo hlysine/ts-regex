@@ -1,5 +1,6 @@
-import '../src/strict';
-import { NodeType, Parse, ProcessReferences, Tokenize } from '../src/index';
+import { NodeType, Parse } from '../src/parser';
+import { PostProcess } from '../src/postProcessor';
+import { Tokenize } from '../src/tokenizer';
 import { checkType } from './testUtils';
 
 describe('post processor', () => {
@@ -54,7 +55,7 @@ describe('post processor', () => {
           children: [];
         }
       ],
-      ProcessReferences<Parse<Tokenize<'((?<name>))(?<name>)\\1\\2\\3\\4'>>>
+      PostProcess<Parse<Tokenize<'((?<name>))(?<name>)\\1\\2\\3\\4'>>>
     >();
     checkType<
       [
@@ -71,7 +72,7 @@ describe('post processor', () => {
           ];
         }
       ],
-      ProcessReferences<Parse<Tokenize<'(?<name> )\\k<name2>'>>>
+      PostProcess<Parse<Tokenize<'(?<name> )\\k<name2>'>>>
     >();
     checkType<
       [
@@ -87,7 +88,7 @@ describe('post processor', () => {
           ];
         }
       ],
-      ProcessReferences<Parse<Tokenize<'\\123'>>>
+      PostProcess<Parse<Tokenize<'\\123'>>>
     >();
     checkType<
       [
@@ -110,7 +111,7 @@ describe('post processor', () => {
           children: [];
         }
       ],
-      ProcessReferences<Parse<Tokenize<'\\193'>>>
+      PostProcess<Parse<Tokenize<'\\193'>>>
     >();
     checkType<
       [
@@ -146,7 +147,103 @@ describe('post processor', () => {
           children: [];
         }
       ],
-      ProcessReferences<Parse<Tokenize<'\\7\\8\\9'>>>
+      PostProcess<Parse<Tokenize<'\\7\\8\\9'>>>
+    >();
+    checkType<
+      [
+        {
+          type: NodeType.Alternation;
+          value: '|';
+          children: [
+            {
+              type: NodeType.Warning;
+              value: 'There are multiple alternation branches with identical content.';
+              children: [];
+            }
+          ];
+        },
+        {
+          type: NodeType.Alternation;
+          value: '|';
+          children: [
+            {
+              type: NodeType.Warning;
+              value: 'There are multiple alternation branches with identical content.';
+              children: [];
+            }
+          ];
+        },
+        { type: NodeType.Alternation; value: '|'; children: [] }
+      ],
+      PostProcess<Parse<Tokenize<'||'>>>
+    >();
+    checkType<
+      [
+        {
+          type: NodeType.Alternation;
+          value: '|';
+          children: [
+            {
+              type: NodeType.Lookaround;
+              value: '(?<=';
+              children: [
+                {
+                  type: NodeType.Group;
+                  value: '(';
+                  children: [
+                    {
+                      type: NodeType.Quantifier;
+                      value: '?';
+                      children: [
+                        {
+                          type: NodeType.Literal;
+                          value: 'a';
+                          children: [];
+                        }
+                      ];
+                    }
+                  ];
+                }
+              ];
+            },
+            {
+              type: NodeType.Warning;
+              value: 'There are multiple alternation branches with identical content.';
+              children: [];
+            }
+          ];
+        },
+        {
+          type: NodeType.Alternation;
+          value: '|';
+          children: [
+            {
+              type: NodeType.Lookaround;
+              value: '(?<=';
+              children: [
+                {
+                  type: NodeType.Group;
+                  value: '(';
+                  children: [
+                    {
+                      type: NodeType.Quantifier;
+                      value: '?';
+                      children: [
+                        {
+                          type: NodeType.Literal;
+                          value: 'a';
+                          children: [];
+                        }
+                      ];
+                    }
+                  ];
+                }
+              ];
+            }
+          ];
+        }
+      ],
+      PostProcess<Parse<Tokenize<'(?<=(a?))|(?<=(a?))'>>>
     >();
   });
 });
