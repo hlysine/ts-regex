@@ -12,11 +12,11 @@ describe('flags', () => {
         s: false;
         u: false;
         y: false;
-        error: "Invalid flag 'a'" | "Invalid flag 'b'" | "Invalid flag 'c'";
+        errors: ["Invalid flag 'a'", "Invalid flag 'b'", "Invalid flag 'c'"];
       },
       ParseFlags<'abc'>
     >();
-    checkType<{ d: false; g: true; i: true; m: true; s: true; u: false; y: true; error: never }, ParseFlags<'gimys'>>();
+    checkType<{ d: false; g: true; i: true; m: true; s: true; u: false; y: true; errors: [] }, ParseFlags<'gimys'>>();
     checkType<
       {
         u: false;
@@ -26,7 +26,7 @@ describe('flags', () => {
         m: false;
         s: false;
         y: false;
-        error: "Duplicate flag 'g'";
+        errors: ["Duplicate flag 'g'"];
       },
       ParseFlags<'ggi'>
     >();

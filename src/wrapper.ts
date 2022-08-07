@@ -3,33 +3,28 @@ import { FlagInfo, ParseFlags } from './flags';
 import { Node, NodeType, Parse } from './parser';
 import { Tokenize } from './tokenizer';
 
-type GetValuesByNode<Type extends NodeType, Tree extends Node, Values extends string = never> = Tree extends {
-  type: Type;
-  value: infer E extends string;
-}
-  ? Values | E
-  : Tree['children']['length'] extends 0
-  ? never
-  : GetValuesByNode<Type, Tree['children'][number], Values>;
-
-export type CollectMessages<Tree extends Node[], Strict extends boolean = true> =
-  | GetValuesByNode<NodeType.Error, Tree[number]>
-  | (Strict extends true ? GetValuesByNode<NodeType.Warning, Tree[number]> : never);
+type CollectMessages<Tree extends Node[], Messages extends string[] = []> = Tree extends [
+  infer Head extends Node,
+  ...infer Tail extends Node[]
+]
+  ? Head extends { type: NodeType.Error | NodeType.Warning }
+    ? [...Messages, Head['value']]
+    : CollectMessages<Tail, [...Messages, ...CollectMessages<Head['children'], []>]>
+  : Messages;
 
 type BuildTree<Expr extends string> = PostProcess<Parse<Tokenize<Expr>>>;
 
-type CheckPattern<
-  Pattern extends string,
-  Tree extends Node[],
-  Strict extends boolean = true,
-  Messages = CollectMessages<Tree, Strict>
-> = [Messages] extends [never] ? Pattern : Messages;
+type CheckPattern<Pattern extends string, Tree extends Node[], Messages = CollectMessages<Tree>> = Messages extends []
+  ? Pattern
+  : Messages;
 
-type CheckFlags<FlagString extends string, Info extends FlagInfo> = [Info['error']] extends [never]
+type CheckFlags<FlagString extends string, Info extends FlagInfo, Errors = Info['errors']> = boolean extends Info['g']
+  ? string
+  : Errors extends []
   ? FlagString
-  : Info['error'];
+  : Errors;
 
-type BuildFlagString<Info extends FlagInfo> = string extends Info[keyof Info]
+type BuildFlagString<Info extends FlagInfo> = boolean extends Info['g']
   ? string
   : `${Info['d'] extends true ? 'd' : ''}${Info['g'] extends true ? 'g' : ''}${Info['i'] extends true
       ? 'i'
@@ -109,15 +104,11 @@ interface TypedRegExp<
   lastIndex: number;
 }
 
-export function regex<
-  Pattern extends string = string,
-  Flags extends string = string,
-  Tree extends Node[] = BuildTree<Pattern>,
-  Info extends FlagInfo = ParseFlags<Flags>
->(pattern: CheckPattern<Pattern, Tree, true>, flags?: CheckFlags<Flags, Info>): TypedRegExp<Pattern, Tree, Info> {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  return new RegExp(pattern as string, flags) as any;
+export function regex<Pattern extends string, Flags extends string, Tree extends Node[] = BuildTree<Pattern>>(
+  pattern: CheckPattern<Pattern, Tree>,
+  flags?: CheckFlags<Flags, ParseFlags<Flags>>
+): TypedRegExp<Pattern, Tree, ParseFlags<Flags>> {
+  return new RegExp(pattern, flags as any) as any;
 }
 
 declare global {
