@@ -20,15 +20,15 @@ Strongly typed RegExp wrapper.
 Install ts-regex with your preferred package manager, and then import it with CommonJS or ES Modules syntax:
 
 ```bash
-npm install ts-regex
+npm install @henry-yslin/ts-regex
 
-yarn add ts-regex
+yarn add @henry-yslin/ts-regex
 ```
 
 ```js
-import { regex } from 'ts-regex';
+import { regex } from '@henry-yslin/ts-regex';
 
-const { regex } = require('ts-regex');
+const { regex } = require('@henry-yslin/ts-regex');
 ```
 
 ## Usage
@@ -37,7 +37,7 @@ Simply use the provided `regex` function to create `RegExp` objects. You will ge
 compile-time regex syntax check for free!
 
 ```ts
-import { regex } from 'ts-regex';
+import { regex } from '@henry-yslin/ts-regex';
 
 const nameRegex = regex('(?<first>[a-zA-Z_$])[a-zA-Z0-9_$]*');
 
