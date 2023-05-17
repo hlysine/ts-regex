@@ -1,6 +1,6 @@
 {
   "name": "@henry-yslin/ts-regex",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Henry Lin",
   "license": "MIT",
   "description": "Strongly-typed regex checker written entirely in TypeScript type definitions.",
