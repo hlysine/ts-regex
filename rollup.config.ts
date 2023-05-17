@@ -4,9 +4,8 @@ import del from 'rollup-plugin-delete';
 import dts from 'rollup-plugin-dts';
 import esbuild from 'rollup-plugin-esbuild';
 import nodeResolve from '@rollup/plugin-node-resolve';
-import packageJson from './package.json';
 
-const name = packageJson.main.replace(/\.umd\.js$/, '');
+const name = 'dist/ts-regex';
 
 const bundle = cfg => ({
   ...cfg,
@@ -26,7 +25,7 @@ const config: OutputOptions[] = [
       {
         file: `${name}.umd.js`,
         format: 'umd',
-        name: 'readableRegExp',
+        name: 'ts-regex',
         sourcemap: true,
       },
     ],
